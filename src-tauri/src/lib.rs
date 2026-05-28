@@ -65,6 +65,11 @@ pub fn run() {
 
             Ok(())
         })
+        .invoke_handler(tauri::generate_handler![
+            server_manager::get_server_list,
+            server_manager::add_server_command,
+            server_manager::remove_server_command,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
