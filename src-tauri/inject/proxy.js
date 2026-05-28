@@ -1,5 +1,5 @@
 // Injected into the WebView before page load.
-// Overrides window.fetch and window.WebSocket to route through Tauri backend.
+// Overrides window.fetch to route API requests through Tauri backend.
 // Also blocks Service Worker registration to prevent SW from intercepting requests.
 
 (function () {
@@ -19,7 +19,6 @@
 
   const { invoke } = core;
   const originalFetch = window.fetch.bind(window);
-  const OriginalWebSocket = window.WebSocket;
 
   // --- Fetch proxy for /api/* ---
 
@@ -27,7 +26,7 @@
     const url = typeof input === "string" ? input : input.url;
 
     // Only intercept API requests
-    if (url.startsWith("/api/") || url.includes("/api/")) {
+    if (url.startsWith("/api/")) {
       const method = init?.method || "GET";
       const headers = {};
       if (init?.headers) {
@@ -67,26 +66,7 @@
     return originalFetch(input, init);
   };
 
-  // --- WebSocket proxy for /collaboration and /realtime ---
-
-  function ProxiedWebSocket(url, protocols) {
-    if (url.includes("/collaboration") || url.includes("/realtime")) {
-      // Route through Tauri backend local WS server
-      const parsed = new URL(url, window.location.origin);
-      const proxyUrl =
-        "ws://127.0.0.1:__TAURI_WS_PORT__" +
-        parsed.pathname +
-        parsed.search;
-      return new OriginalWebSocket(proxyUrl, protocols);
-    }
-    // Non-proxied WebSocket: use original
-    return new OriginalWebSocket(url, protocols);
-  }
-
-  ProxiedWebSocket.CONNECTING = OriginalWebSocket.CONNECTING;
-  ProxiedWebSocket.OPEN = OriginalWebSocket.OPEN;
-  ProxiedWebSocket.CLOSING = OriginalWebSocket.CLOSING;
-  ProxiedWebSocket.CLOSED = OriginalWebSocket.CLOSED;
-
-  window.WebSocket = ProxiedWebSocket;
+  // TODO: WebSocket proxy will be implemented in Task 7 with a local WS server.
+  // Tauri IPC is request/response based and cannot proxy raw WebSocket connections,
+  // so WebSocket connections currently use direct connection (original behavior).
 })();
