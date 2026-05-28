@@ -6,6 +6,7 @@ pub mod sync_engine;
 pub mod system;
 pub mod ws_proxy;
 
+use api_proxy::HttpClient;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -60,6 +61,10 @@ pub fn run() {
             let conn = storage::init_database(&app_handle)?;
             app.manage(DbConnection(Mutex::new(conn)));
 
+            // Initialize HTTP client for API proxy
+            let http_client = HttpClient::new().expect("Failed to create HTTP client");
+            app.manage(http_client);
+
             // Setup system tray
             system::setup_tray(&app_handle)?;
 
@@ -69,6 +74,7 @@ pub fn run() {
             server_manager::get_server_list,
             server_manager::add_server_command,
             server_manager::remove_server_command,
+            api_proxy::proxy_fetch,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
