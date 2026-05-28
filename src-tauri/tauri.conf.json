@@ -25,14 +25,21 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis", "dmg", "appimage"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "copyright": "© 2026 Outline Contributors",
+    "category": "Productivity",
+    "shortDescription": "Desktop client for Outline wiki",
+    "longDescription": "A cross-platform desktop client for self-hosted Outline instances with offline editing support via Y.js CRDT synchronization.",
+    "nsis": {
+      "installerIcon": "icons/icon.ico"
+    }
   },
   "plugins": {
     "updater": {
