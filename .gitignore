@@ -1,0 +1,16 @@
+# Rust
+src-tauri/target/
+
+# Node
+node_modules/
+
+# Vite
+dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
