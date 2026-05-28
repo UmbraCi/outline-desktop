@@ -5,6 +5,10 @@ use tauri::{Manager, State, WebviewUrl, WebviewWindowBuilder};
 
 /// Add a server to the database.
 pub fn add_server(conn: &Connection, config: &ServerConfig) -> Result<()> {
+    // Validate URL format before inserting
+    url::Url::parse(&config.url)
+        .map_err(|e| anyhow::anyhow!("Invalid server URL '{}': {}", config.url, e))?;
+
     conn.execute(
         "INSERT INTO servers (id, name, url, offline_enabled) VALUES (?1, ?2, ?3, ?4)",
         rusqlite::params![config.id, config.name, config.url, config.offline_enabled],

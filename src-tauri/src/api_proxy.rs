@@ -131,7 +131,9 @@ pub async fn proxy_fetch(
     if method == "GET" {
         let conn = db.0.lock().map_err(|e| e.to_string())?;
         let cache_key = format!("{}:{}", method, path);
-        let _ = cache_response(&conn, "default", &cache_key, &method, &response.body);
+        if let Err(e) = cache_response(&conn, "default", &cache_key, &method, &response.body) {
+            tracing::warn!("Failed to cache response for {}: {}", cache_key, e);
+        }
     }
 
     Ok(response)

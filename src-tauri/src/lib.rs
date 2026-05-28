@@ -30,14 +30,6 @@ pub struct OfflineStatus {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProxyRequest {
-    pub method: String,
-    pub path: String,
-    pub headers: Option<HashMap<String, String>>,
-    pub body: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProxyResponse {
     pub status: u16,
     pub headers: HashMap<String, String>,
@@ -46,7 +38,64 @@ pub struct ProxyResponse {
 
 pub struct DbConnection(pub Mutex<rusqlite::Connection>);
 
+// Stub commands for DesktopBridge compatibility.
+// These prevent runtime errors when Outline calls bridge methods
+// that don't have full implementations yet.
+
+#[tauri::command]
+fn get_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}
+
+#[tauri::command]
+fn restart_app() {}
+
+#[tauri::command]
+fn restart_and_install() {}
+
+#[tauri::command]
+fn check_for_updates() {}
+
+#[tauri::command]
+fn on_titlebar_double_click() {}
+
+#[tauri::command]
+fn on_logout() {}
+
+#[tauri::command]
+fn add_custom_host(_host: String) {}
+
+#[tauri::command]
+fn set_spell_checker_languages(_languages: Vec<String>) {}
+
+#[tauri::command]
+fn set_notification_count(_count: u32) {}
+
+#[tauri::command]
+fn get_auto_launch() -> bool {
+    false
+}
+
+#[tauri::command]
+fn set_auto_launch(_enabled: bool) {}
+
+#[tauri::command]
+fn switch_server(_id: String) {}
+
+#[tauri::command]
+fn get_offline_status() -> crate::OfflineStatus {
+    crate::OfflineStatus {
+        is_online: true,
+        pending_operations: 0,
+        last_sync: None,
+    }
+}
+
+#[tauri::command]
+fn sync_now() {}
+
 pub fn run() {
+    tracing_subscriber::fmt::init();
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
@@ -76,6 +125,20 @@ pub fn run() {
             server_manager::remove_server_command,
             server_manager::open_server_window,
             api_proxy::proxy_fetch,
+            get_version,
+            restart_app,
+            restart_and_install,
+            check_for_updates,
+            on_titlebar_double_click,
+            on_logout,
+            add_custom_host,
+            set_spell_checker_languages,
+            set_notification_count,
+            get_auto_launch,
+            set_auto_launch,
+            switch_server,
+            get_offline_status,
+            sync_now,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

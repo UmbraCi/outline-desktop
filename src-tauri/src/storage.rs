@@ -16,6 +16,7 @@ fn get_db_path(app_handle: &AppHandle) -> Result<PathBuf> {
 pub fn init_database(app_handle: &AppHandle) -> Result<rusqlite::Connection> {
     let db_path = get_db_path(app_handle)?;
     let conn = rusqlite::Connection::open(&db_path)?;
+    conn.execute_batch("PRAGMA foreign_keys = ON;")?;
 
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS servers (
@@ -84,6 +85,7 @@ mod tests {
     /// Helper: create an in-memory DB with the full schema for testing.
     fn setup_test_db() -> Connection {
         let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
         conn.execute_batch(
             "CREATE TABLE IF NOT EXISTS servers (
                 id TEXT PRIMARY KEY,
