@@ -1,7 +1,7 @@
 use crate::{DbConnection, ServerConfig};
 use anyhow::Result;
 use rusqlite::Connection;
-use tauri::State;
+use tauri::{Manager, State, WebviewUrl, WebviewWindowBuilder};
 
 /// Add a server to the database.
 pub fn add_server(conn: &Connection, config: &ServerConfig) -> Result<()> {
@@ -82,6 +82,45 @@ pub fn add_server_command(
 pub fn remove_server_command(db: State<'_, DbConnection>, id: String) -> Result<(), String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
     remove_server(&conn, &id).map_err(|e| e.to_string())
+}
+
+/// Open a WebView window for a specific server.
+#[tauri::command]
+pub fn open_server_window(
+    app: tauri::AppHandle,
+    db: tauri::State<'_, crate::DbConnection>,
+    server_id: String,
+) -> Result<(), String> {
+    let conn = db.0.lock().map_err(|e| e.to_string())?;
+    let server = get_server(&conn, &server_id)
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| format!("Server not found: {}", server_id))?;
+
+    let label = format!("server-{}", server_id);
+    let url = WebviewUrl::External(
+        server.url.parse().map_err(|e: url::ParseError| e.to_string())?,
+    );
+
+    // If window already exists, focus it
+    if let Some(existing) = app.get_webview_window(&label) {
+        let _ = existing.show();
+        let _ = existing.set_focus();
+        return Ok(());
+    }
+
+    // Read injection scripts
+    let bridge_js = include_str!("../inject/bridge.js");
+    let proxy_js = include_str!("../inject/proxy.js");
+
+    let _window = WebviewWindowBuilder::new(&app, &label, url)
+        .title(&server.name)
+        .inner_size(1200.0, 800.0)
+        .initialization_script(bridge_js)
+        .initialization_script(proxy_js)
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
 }
 
 #[cfg(test)]

@@ -74,6 +74,7 @@ pub fn run() {
             server_manager::get_server_list,
             server_manager::add_server_command,
             server_manager::remove_server_command,
+            server_manager::open_server_window,
             api_proxy::proxy_fetch,
         ])
         .run(tauri::generate_context!())
