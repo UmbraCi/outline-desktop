@@ -115,6 +115,15 @@ interface TauriDesktopBridge extends DesktopBridge {
 
 注入方式：Tauri 的 `WebviewWindowBuilder::initialization_script()` 注入 JavaScript，在页面加载前执行，将 `window.TauriBridge` 和 fetch 拦截逻辑写入全局作用域。
 
+初始化脚本还需阻止远程 Service Worker 注册，否则 SW 会在网络层拦截请求，绕过我们的 fetch 代理：
+
+```javascript
+// 阻止远程 SW 注册，离线缓存由 Tauri 后端控制
+Object.defineProperty(navigator, 'serviceWorker', {
+  value: undefined, writable: false
+});
+```
+
 ### 2. 服务器连接管理
 
 ```rust
@@ -136,8 +145,11 @@ enum ConnectionStatus {
 ```
 
 行为：
-- 添加服务器时，WebView 加载目标 URL，完成 OAuth 登录流程
-- 认证后 token 存储到 SQLite（加密存储）
+- 添加服务器时，用户输入服务器 URL（如 `https://wiki.yourcompany.com`）
+- WebView 加载该 URL，Outline 的 OAuth 登录流程正常执行
+- 登录成功后，Outline 设置 HTTP-only JWT Cookie（同源，自动携带）
+- 用户后续访问无需重复登录（Cookie 有效期由服务器配置决定）
+- Tauri 后端定期检查 Cookie 有效性，过期时提示重新登录
 - 每个服务器对应一个独立的 WebviewWindow 或通过切换 WebView URL 实现
 - 系统托盘展示服务器列表及连接状态
 
